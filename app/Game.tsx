@@ -51,7 +51,7 @@ type Engine = {
   scoreFlash: number;
 };
 
-type Sprite = { x: number; y: number; w: number; h: number; flipX?: boolean };
+type Sprite = { x: number; y: number; w: number; h: number };
 
 const WIDTH = 800;
 const HEIGHT = 200;
@@ -87,10 +87,9 @@ const jumpFrames: Sprite[] = [
 const trashSprite: Sprite = { x: 645, y: 180, w: 41, h: 52 };
 const dumpsterSprite: Sprite = { x: 788, y: 103, w: 135, h: 134 };
 const pigeonFrames: Sprite[] = [
-  { x: 984, y: 142, w: 64, h: 45 },
-  { x: 1070, y: 143, w: 65, h: 45 },
-  { x: 1158, y: 143, w: 65, h: 45 },
-  { x: 967, y: 397, w: 51, h: 41, flipX: true },
+  { x: 974, y: 137, w: 68, h: 52 },
+  { x: 1062, y: 139, w: 68, h: 51 },
+  { x: 1154, y: 155, w: 69, h: 49 },
 ];
 
 const initialCodefairState: CodefairState = { user: null, entries: [] };
@@ -165,14 +164,6 @@ function drawSprite(
   destination: Rect,
 ) {
   if (!atlas) return;
-  if (sprite.flipX) {
-    context.save();
-    context.translate(destination.x + destination.w, destination.y);
-    context.scale(-1, 1);
-    context.drawImage(atlas, sprite.x, sprite.y, sprite.w, sprite.h, 0, 0, destination.w, destination.h);
-    context.restore();
-    return;
-  }
   context.drawImage(atlas, sprite.x, sprite.y, sprite.w, sprite.h, destination.x, destination.y, destination.w, destination.h);
 }
 
@@ -296,6 +287,7 @@ export function Game() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const engineRef = useRef<Engine | null>(null);
   const atlasRef = useRef<HTMLCanvasElement | null>(null);
+  const pigeonAtlasRef = useRef<HTMLCanvasElement | null>(null);
   const audioRef = useRef<ReturnType<typeof makeAudio> | null>(null);
   const completionHandledRef = useRef("");
   const lastVisibleScoreRef = useRef(0);
@@ -369,6 +361,12 @@ export function Game() {
     image.src = "/jimothy-sprites.jpg";
     image.onload = () => {
       atlasRef.current = createAtlas(image, [78, 78, 76]);
+    };
+
+    const pigeonImage = new Image();
+    pigeonImage.src = "/jimothy-pigeon-sprites.jpg";
+    pigeonImage.onload = () => {
+      pigeonAtlasRef.current = createAtlas(pigeonImage, [78, 78, 76]);
     };
   }, []);
 
@@ -528,7 +526,7 @@ export function Game() {
         if (obstacle.kind === "pigeon") {
           const frame = pigeonFrameForTime(engine.animationTime, obstacle.frameOffset);
           const sprite = pigeonFrames[frame];
-          drawSprite(context, atlasRef.current, sprite, fittedSpriteDestination(sprite, obstacle));
+          drawSprite(context, pigeonAtlasRef.current, sprite, fittedSpriteDestination(sprite, obstacle));
         }
       }
 
