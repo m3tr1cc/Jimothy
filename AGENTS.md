@@ -15,13 +15,12 @@ Stay on this stack unless a task explicitly changes it:
 - Plain CSS for the full-frame application shell
 - Node test runner for deterministic rules and rendered-output checks
 - Vercel deployment linked to GitHub, with preview deployments for every pull request
-- Codefair host integration through the versioned `postMessage` bridge in `app/codefair.ts`
 
-Do not add a game engine, animation framework, component library, background music, copyrighted Chrome assets, browser-exposed secrets, or a second source of truth for Codefair identity. Keep dependencies focused and preserve the supplied Jimothy art direction.
+Do not add a game engine, animation framework, component library, authentication flow, background music, copyrighted Chrome assets, or browser-exposed secrets. Keep dependencies focused and preserve the supplied Jimothy art direction.
 
 ## Product invariants
 
-This is a real playable game. Never ship fake controls, decorative buttons that do nothing, a simulated global leaderboard, frame-dependent physics, blurry sprites, or placeholder game states.
+This is a real playable game. Never ship fake controls, decorative buttons that do nothing, app chrome around the game, frame-dependent physics, blurry sprites, or placeholder game states.
 
 - The app fills the Codefair project frame and starts directly in the game.
 - Space, Arrow Up, click, and a tap anywhere in the game shell jump. Arrow Down ducks; on touch, swipe down anywhere and hold to duck until release. Space restarts after a collision.
@@ -30,13 +29,13 @@ This is a real playable game. Never ship fake controls, decorative buttons that 
 - Trash cans remain the most common obstacle, dumpsters unlock at 400, and animated pigeons are mixed into runs from the start at duck-required heights. Pigeons use the dedicated supplied atlas and flap through its raised-, mid-, and down-wing poses without artificial vertical bobbing.
 - Speed begins at 6 px/frame, increases by 0.25 every 100 points, and caps at 13 px/frame.
 - `jimothy_highscore` remains the device-local high-score key.
-- Ranked scores belong to authenticated Codefair users and are submitted only through the host bridge. Anonymous players must see the exact message `log in to save your score` after a finished run.
-- Global leaderboard UI must display real host-provided data or an honest empty state; never hard-code fake rankings.
+- The game is the entire interface: no header, footer, leaderboard, authentication, login prompt, score-submission flow, or surrounding controls.
+- Score and `HI` remain visible inside the canvas. After a collision, Space, click, or tap starts a fresh run.
 - Audio stays minimal, synthesized, user-initiated, and silent by default until interaction. No background music.
 
 ## Supabase migrations
 
-For every task, explicitly decide whether the change requires Supabase schema, RLS, function, trigger, index, seed, or policy work. Jimothy currently delegates identity and global leaderboard persistence to Codefair, so do not add Supabase speculatively.
+For every task, explicitly decide whether the change requires Supabase schema, RLS, function, trigger, index, seed, or policy work. Jimothy intentionally uses only browser-local high-score storage, so do not add Supabase speculatively.
 
 If Supabase becomes necessary:
 
@@ -62,7 +61,7 @@ npm run test
 npm run build
 ```
 
-For user-facing changes, also verify the affected flow in a real browser, check framework error overlays and console errors, exercise keyboard and pointer controls, inspect the leaderboard and anonymous completion state, and respect `prefers-reduced-motion`.
+For user-facing changes, also verify the affected flow in a real browser, check framework error overlays and console errors, exercise keyboard and pointer controls, confirm the game-only shell and restart flow, and respect `prefers-reduced-motion`.
 
 ## Pull request handoff
 

@@ -18,9 +18,8 @@ test("server-renders the Jimothy game shell", async () => {
   assert.match(response.headers.get("content-type") ?? "", /^text\/html\b/i);
   const html = await response.text();
   assert.match(html, /<title>Jimothy — Alley Run<\/title>/i);
-  assert.match(html, /JIMOTHY/);
-  assert.match(html, /GLOBAL TOP 10/);
   assert.match(html, /<canvas/);
-  assert.match(html, /SPACE/);
+  assert.match(html, /class="game-shell"/);
+  assert.doesNotMatch(html, /GLOBAL TOP 10|log in to save your score|<header|<footer/i);
   assert.doesNotMatch(html, /codex-preview|react-loading-skeleton|Your site is taking shape/i);
 });

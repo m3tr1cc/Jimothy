@@ -1,13 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
-import {
-  parseCodefairState,
-  requestCodefairLogin,
-  requestCodefairState,
-  submitCodefairScore,
-  type CodefairState,
-} from "./codefair";
+import { useCallback, useEffect, useRef } from "react";
 import {
   chooseObstacle,
   formatScore,
@@ -36,8 +29,6 @@ type Engine = {
   score: number;
   highScore: number;
   speed: number;
-  runStartedAt: number;
-  runId: string;
   playerY: number;
   playerVelocity: number;
   ducking: boolean;
@@ -92,14 +83,6 @@ const pigeonFrames: Sprite[] = [
   { x: 1154, y: 155, w: 69, h: 49 },
 ];
 
-const initialCodefairState: CodefairState = { user: null, entries: [] };
-
-function makeRunId() {
-  return typeof crypto !== "undefined" && "randomUUID" in crypto
-    ? crypto.randomUUID()
-    : `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
-}
-
 function createGround(random: () => number): GroundMark[] {
   return Array.from({ length: 30 }, (_, index) => ({
     x: index * 32 + random() * 26,
@@ -116,8 +99,6 @@ function makeEngine(highScore: number): Engine {
     score: 0,
     highScore,
     speed: 360,
-    runStartedAt: 0,
-    runId: makeRunId(),
     playerY: GROUND_Y - PLAYER_H,
     playerVelocity: 0,
     ducking: false,
@@ -151,10 +132,6 @@ function playerHitbox(engine: Engine): Rect {
 
 function obstacleHitbox(obstacle: Obstacle): Rect {
   return obstacleCollisionBox(obstacle);
-}
-
-function isInteractivePointerTarget(target: EventTarget | null) {
-  return target instanceof Element && Boolean(target.closest("button, a, input, select, textarea, [role='dialog']"));
 }
 
 function drawSprite(
@@ -289,38 +266,14 @@ export function Game() {
   const atlasRef = useRef<HTMLCanvasElement | null>(null);
   const pigeonAtlasRef = useRef<HTMLCanvasElement | null>(null);
   const audioRef = useRef<ReturnType<typeof makeAudio> | null>(null);
-  const completionHandledRef = useRef("");
-  const lastVisibleScoreRef = useRef(0);
-  const [gameState, setGameState] = useState<GameState>("waiting");
-  const [visibleScore, setVisibleScore] = useState(0);
-  const [visibleHighScore, setVisibleHighScore] = useState(0);
-  const [codefair, setCodefair] = useState<CodefairState>(initialCodefairState);
-  const [leaderboardOpen, setLeaderboardOpen] = useState(false);
-  const [scoreNotice, setScoreNotice] = useState("");
-  const codefairRef = useRef(codefair);
-  const leaderboardOpenRef = useRef(leaderboardOpen);
   const touchGestureRef = useRef<TouchGesture | null>(null);
-
-  useEffect(() => {
-    codefairRef.current = codefair;
-  }, [codefair]);
-
-  useEffect(() => {
-    leaderboardOpenRef.current = leaderboardOpen;
-  }, [leaderboardOpen]);
 
   const startRun = useCallback((jump = true) => {
     const highScore = engineRef.current?.highScore ?? 0;
     const engine = makeEngine(highScore);
     engine.state = "running";
-    engine.runStartedAt = performance.now();
     engine.playerVelocity = jump ? -270 : 0;
     engineRef.current = engine;
-    completionHandledRef.current = "";
-    lastVisibleScoreRef.current = 0;
-    setVisibleScore(0);
-    setGameState("running");
-    setScoreNotice("");
     audioRef.current?.restart();
     if (jump) audioRef.current?.jump();
   }, []);
@@ -355,7 +308,6 @@ export function Game() {
     const highScore = Number.isFinite(saved) ? Math.max(0, saved) : 0;
     engineRef.current = makeEngine(highScore);
     audioRef.current = makeAudio();
-    requestAnimationFrame(() => setVisibleHighScore(highScore));
 
     const image = new Image();
     image.src = "/jimothy-sprites.jpg";
@@ -371,27 +323,10 @@ export function Game() {
   }, []);
 
   useEffect(() => {
-    requestCodefairState();
-    const onMessage = (event: MessageEvent) => {
-      const state = parseCodefairState(event.data);
-      if (!state) return;
-      setCodefair(state);
-      if (state.user && completionHandledRef.current) setScoreNotice("SCORE SAVED");
-    };
-    window.addEventListener("message", onMessage);
-    return () => window.removeEventListener("message", onMessage);
-  }, []);
-
-  useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
-      if (leaderboardOpenRef.current) {
-        if (event.code === "Escape") setLeaderboardOpen(false);
-        return;
-      }
       if (["Space", "ArrowUp", "ArrowDown"].includes(event.code)) event.preventDefault();
       if ((event.code === "Space" || event.code === "ArrowUp") && !event.repeat) jump();
       if (event.code === "ArrowDown") setDuck(true);
-      if (event.code === "KeyL" && !event.repeat) setLeaderboardOpen((value) => !value);
     };
     const onKeyUp = (event: KeyboardEvent) => {
       if (event.code === "ArrowDown") setDuck(false);
@@ -461,27 +396,7 @@ export function Game() {
           engine.frozenFrame = Math.floor(engine.animationTime * 12) % runFrames.length;
           engine.highScore = Math.max(engine.highScore, Math.floor(engine.score));
           localStorage.setItem("jimothy_highscore", String(engine.highScore));
-          setVisibleHighScore(engine.highScore);
-          setVisibleScore(Math.floor(engine.score));
-          setGameState("dead");
           audioRef.current?.death();
-
-          if (completionHandledRef.current !== engine.runId) {
-            completionHandledRef.current = engine.runId;
-            if (codefairRef.current.user) {
-              submitCodefairScore(engine.score, engine.runId, time - engine.runStartedAt);
-              setScoreNotice("SAVING SCORE...");
-              setTimeout(requestCodefairState, 500);
-            } else {
-              setScoreNotice("log in to save your score");
-            }
-          }
-        }
-
-        const nextVisibleScore = Math.floor(engine.score);
-        if (nextVisibleScore !== lastVisibleScoreRef.current) {
-          lastVisibleScoreRef.current = nextVisibleScore;
-          setVisibleScore(nextVisibleScore);
         }
       }
 
@@ -577,7 +492,6 @@ export function Game() {
   }, []);
 
   const onGamePointerDown = (event: React.PointerEvent<HTMLElement>) => {
-    if (leaderboardOpenRef.current || isInteractivePointerTarget(event.target)) return;
     if (event.pointerType === "mouse") {
       if (event.button !== 0) return;
       jump();
@@ -628,99 +542,21 @@ export function Game() {
 
   return (
     <main
-      className={`game-shell${leaderboardOpen ? " leaderboard-open" : ""}`}
+      className="game-shell"
       onPointerDown={onGamePointerDown}
       onPointerMove={onGamePointerMove}
       onPointerUp={(event) => finishTouchGesture(event)}
       onPointerCancel={(event) => finishTouchGesture(event, true)}
       onLostPointerCapture={(event) => finishTouchGesture(event, true)}
     >
-      <header className="game-header">
-        <div className="wordmark" aria-label="Jimothy alley run">
-          <span className="wordmark-mark" aria-hidden="true">J</span>
-          <span>JIMOTHY</span>
-          <span className="wordmark-slash">{"//"}</span>
-          <span className="wordmark-sub">ALLEY RUN</span>
-        </div>
-        <button className="leaderboard-toggle" type="button" onClick={() => setLeaderboardOpen(true)}>
-          <span aria-hidden="true">▥</span> GLOBAL TOP 10
-        </button>
-      </header>
-
-      <section className="game-stage" aria-label="Jimothy runner game">
-        <canvas
-          ref={canvasRef}
-          className="game-canvas"
-          width={WIDTH}
-          height={HEIGHT}
-          aria-label="Jimothy runs through an alley. Press Space or Arrow Up, click, or tap anywhere in the game to jump. Swipe down anywhere and hold to duck."
-          role="img"
-        />
-        {gameState === "dead" && scoreNotice && (
-          <div className={`score-notice${!codefair.user ? " anonymous" : ""}`} role="status">
-            <span>{scoreNotice}</span>
-            {!codefair.user && (
-              <button type="button" onClick={requestCodefairLogin}>LOG IN</button>
-            )}
-          </div>
-        )}
-      </section>
-
-      <footer className="game-footer">
-        <div className="control-hint">
-          <kbd className="desktop-control-label">SPACE</kbd><kbd className="desktop-control-label">↑</kbd>
-          <span className="desktop-control-label">JUMP</span><span className="mobile-control-label">TAP ANYWHERE</span>
-        </div>
-        <div className="status-line" aria-live="polite">
-          <span>{gameState === "waiting" ? "READY" : gameState === "running" ? "RUNNING" : "RUN ENDED"}</span>
-          <span className="status-dot" aria-hidden="true">•</span>
-          <span>SCORE {formatScore(visibleScore)}</span>
-          <span className="status-dot" aria-hidden="true">•</span>
-          <span>HI {formatScore(visibleHighScore)}</span>
-        </div>
-        <div className="control-hint">
-          <kbd className="desktop-control-label">↓</kbd><span className="desktop-control-label">DUCK</span>
-          <span className="mobile-control-label">SWIPE ↓ + HOLD</span>
-        </div>
-      </footer>
-
-      {leaderboardOpen && (
-        <div className="leaderboard-backdrop" role="presentation" onPointerDown={() => setLeaderboardOpen(false)}>
-          <aside className="leaderboard-panel" role="dialog" aria-modal="true" aria-labelledby="leaderboard-title" onPointerDown={(event) => event.stopPropagation()}>
-            <div className="leaderboard-heading">
-              <div>
-                <p>CODEFAIR GLOBAL</p>
-                <h2 id="leaderboard-title">TOP RUNNERS</h2>
-              </div>
-              <button type="button" className="close-button" onClick={() => setLeaderboardOpen(false)} aria-label="Close leaderboard">×</button>
-            </div>
-            {codefair.entries.length > 0 ? (
-              <ol className="leaderboard-list">
-                {codefair.entries.slice(0, 10).map((entry) => (
-                  <li key={`${entry.userId}-${entry.rank}`} className={entry.isCurrentUser ? "current-runner" : ""}>
-                    <span className="rank">{String(entry.rank).padStart(2, "0")}</span>
-                    <span className="runner-name">{entry.displayName}</span>
-                    <strong>{formatScore(entry.score)}</strong>
-                  </li>
-                ))}
-              </ol>
-            ) : (
-              <div className="leaderboard-empty">
-                <span aria-hidden="true">—</span>
-                <p>NO RANKED RUNS YET</p>
-                <small>Scores appear here when the game is running inside Codefair.</small>
-              </div>
-            )}
-            <div className="leaderboard-you">
-              {codefair.user ? (
-                <><span>PLAYING AS</span><strong>{codefair.user.displayName}</strong></>
-              ) : (
-                <><span>YOUR RUN IS LOCAL</span><button type="button" onClick={requestCodefairLogin}>LOG IN TO RANK</button></>
-              )}
-            </div>
-          </aside>
-        </div>
-      )}
+      <canvas
+        ref={canvasRef}
+        className="game-canvas"
+        width={WIDTH}
+        height={HEIGHT}
+        aria-label="Jimothy runs through an alley. Press Space or Arrow Up, click, or tap anywhere to jump. Swipe down anywhere and hold to duck. After a collision, press Space or tap to restart."
+        role="img"
+      />
     </main>
   );
 }
