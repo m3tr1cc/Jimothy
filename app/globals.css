@@ -1,0 +1,54 @@
+@import "tailwindcss";
+
+:root {
+  --paper: #f7f7f3;
+  --ink: #4e4e4c;
+  --font-pixel: var(--font-geist-mono), "Courier New", monospace;
+}
+
+@theme inline {
+  --font-sans: "Geist", "Geist Fallback", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "Geist Mono", "Geist Mono Fallback", ui-monospace, monospace;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  width: 100%;
+  min-height: 100%;
+  margin: 0;
+  overflow: hidden;
+  background: var(--paper);
+  color: var(--ink);
+}
+
+body {
+  font-family: var(--font-pixel);
+}
+
+.game-shell {
+  display: grid;
+  width: 100vw;
+  height: 100dvh;
+  overflow: hidden;
+  background: var(--paper);
+  cursor: pointer;
+  isolation: isolate;
+  place-items: center;
+  touch-action: none;
+  user-select: none;
+}
+
+.game-canvas {
+  display: block;
+  width: min(100vw, 400dvh);
+  height: auto;
+  max-height: 100dvh;
+  cursor: pointer;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  outline: none;
+}
