@@ -27,7 +27,7 @@ This is a real playable game. Never ship fake controls, decorative buttons that 
 - Space, Arrow Up, click, and a tap anywhere in the game shell jump. Arrow Down ducks; on touch, swipe down anywhere and hold to duck until release. Space restarts after a collision.
 - Canvas uses an 800×200 internal resolution, nearest-neighbor scaling, time-based animation, and delta-time physics.
 - Player collision boxes remain tighter than the sprite; pigeons ignore wing tips.
-- Trash cans remain the most common obstacle, dumpsters unlock at 400, and animated pigeons are mixed into runs from the start at duck-required heights.
+- Trash cans remain the most common obstacle, dumpsters unlock at 400, and animated pigeons are mixed into runs from the start at duck-required heights. Pigeons flap through the supplied raised- and swept-wing sprite poses without artificial vertical bobbing.
 - Speed begins at 6 px/frame, increases by 0.25 every 100 points, and caps at 13 px/frame.
 - `jimothy_highscore` remains the device-local high-score key.
 - Ranked scores belong to authenticated Codefair users and are submitted only through the host bridge. Anonymous players must see the exact message `log in to save your score` after a finished run.

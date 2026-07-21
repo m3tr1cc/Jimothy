@@ -51,7 +51,7 @@ type Engine = {
   scoreFlash: number;
 };
 
-type Sprite = { x: number; y: number; w: number; h: number };
+type Sprite = { x: number; y: number; w: number; h: number; flipX?: boolean };
 
 const WIDTH = 800;
 const HEIGHT = 200;
@@ -90,6 +90,7 @@ const pigeonFrames: Sprite[] = [
   { x: 984, y: 142, w: 64, h: 45 },
   { x: 1070, y: 143, w: 65, h: 45 },
   { x: 1158, y: 143, w: 65, h: 45 },
+  { x: 967, y: 397, w: 51, h: 41, flipX: true },
 ];
 
 const initialCodefairState: CodefairState = { user: null, entries: [] };
@@ -164,7 +165,27 @@ function drawSprite(
   destination: Rect,
 ) {
   if (!atlas) return;
+  if (sprite.flipX) {
+    context.save();
+    context.translate(destination.x + destination.w, destination.y);
+    context.scale(-1, 1);
+    context.drawImage(atlas, sprite.x, sprite.y, sprite.w, sprite.h, 0, 0, destination.w, destination.h);
+    context.restore();
+    return;
+  }
   context.drawImage(atlas, sprite.x, sprite.y, sprite.w, sprite.h, destination.x, destination.y, destination.w, destination.h);
+}
+
+function fittedSpriteDestination(sprite: Sprite, bounds: Rect): Rect {
+  const scale = Math.min(bounds.w / sprite.w, bounds.h / sprite.h);
+  const width = Math.round(sprite.w * scale);
+  const height = Math.round(sprite.h * scale);
+  return {
+    x: Math.round(bounds.x + (bounds.w - width) / 2),
+    y: Math.round(bounds.y + bounds.h - height),
+    w: width,
+    h: height,
+  };
 }
 
 function fittedPlayerDestination(sprite: Sprite, top: number): Rect {
@@ -506,8 +527,8 @@ export function Game() {
         if (obstacle.kind === "dumpster") drawSprite(context, atlasRef.current, dumpsterSprite, obstacle);
         if (obstacle.kind === "pigeon") {
           const frame = pigeonFrameForTime(engine.animationTime, obstacle.frameOffset);
-          const flyingDestination = { ...obstacle, y: obstacle.y + frame - 1 };
-          drawSprite(context, atlasRef.current, pigeonFrames[frame], flyingDestination);
+          const sprite = pigeonFrames[frame];
+          drawSprite(context, atlasRef.current, sprite, fittedSpriteDestination(sprite, obstacle));
         }
       }
 

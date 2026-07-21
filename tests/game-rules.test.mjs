@@ -39,8 +39,8 @@ test("pigeons add variety from the start while dumpsters unlock at 400", () => {
 
 test("pigeons visibly flap through each wing pose", () => {
   assert.deepEqual(
-    [0, 0.1, 0.2, 0.3, 0.4].map((time) => pigeonFrameForTime(time)),
-    [0, 1, 2, 1, 0],
+    [0, 0.125, 0.25, 0.375, 0.5, 0.625, 0.75].map((time) => pigeonFrameForTime(time)),
+    [0, 3, 1, 3, 2, 3, 0],
   );
 });
 
