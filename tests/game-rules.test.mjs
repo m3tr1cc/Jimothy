@@ -3,6 +3,8 @@ import test from "node:test";
 import {
   chooseObstacle,
   formatScore,
+  isDownwardDuckGesture,
+  isTapGesture,
   makeSeededRandom,
   OBSTACLE_SIZES,
   obstacleCollisionBox,
@@ -91,4 +93,13 @@ test("Jimothy can physically clear the resized dumpster at jump apex", () => {
 
   assert.ok(player.y + player.h < dumpster.y);
   assert.equal(rectanglesIntersect(player, dumpster), false);
+});
+
+test("mobile gestures distinguish taps from downward hold gestures", () => {
+  assert.equal(isTapGesture(100, 100, 106, 106, 180), true);
+  assert.equal(isTapGesture(100, 100, 106, 106, 500), false);
+  assert.equal(isTapGesture(100, 100, 100, 119, 180), false);
+  assert.equal(isDownwardDuckGesture(100, 100, 105, 119), true);
+  assert.equal(isDownwardDuckGesture(100, 100, 125, 108), false);
+  assert.equal(isDownwardDuckGesture(100, 100, 100, 82), false);
 });

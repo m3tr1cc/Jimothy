@@ -196,6 +196,10 @@ button {
   box-shadow: 0 1px 0 #deded8;
 }
 
+.mobile-control-label {
+  display: none;
+}
+
 .status-line {
   font-weight: 670;
 }
@@ -363,8 +367,12 @@ button {
   .wordmark-slash,
   .status-line .status-dot,
   .status-line span:first-child,
-  .control-hint span {
+  .desktop-control-label {
     display: none;
+  }
+
+  .mobile-control-label {
+    display: inline;
   }
 
   .leaderboard-toggle {

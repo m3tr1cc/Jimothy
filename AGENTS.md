@@ -24,7 +24,7 @@ Do not add a game engine, animation framework, component library, background mus
 This is a real playable game. Never ship fake controls, decorative buttons that do nothing, a simulated global leaderboard, frame-dependent physics, blurry sprites, or placeholder game states.
 
 - The app fills the Codefair project frame and starts directly in the game.
-- Space, Arrow Up, click, and tap jump. Arrow Down ducks. Space restarts after a collision.
+- Space, Arrow Up, click, and tap jump. Arrow Down ducks; on touch, swipe down and hold to duck until release. Space restarts after a collision.
 - Canvas uses an 800×200 internal resolution, nearest-neighbor scaling, time-based animation, and delta-time physics.
 - Player collision boxes remain tighter than the sprite; pigeons ignore wing tips.
 - Trash cans remain the most common obstacle, dumpsters unlock at 400, and pigeons are mixed into runs from the start for visual variety.

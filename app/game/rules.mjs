@@ -1,5 +1,8 @@
 export const INITIAL_SPEED = 360;
 export const MAX_SPEED = 780;
+export const TOUCH_DUCK_DISTANCE = 18;
+export const TOUCH_TAP_DISTANCE = 12;
+export const TOUCH_TAP_MAX_DURATION = 350;
 export const OBSTACLE_SIZES = Object.freeze({
   trash: { w: 30, h: 38 },
   dumpster: { w: 68, h: 46 },
@@ -31,6 +34,19 @@ export function chooseObstacle(score, roll) {
 
 export function spacingForSpeed(speed, roll) {
   return 180 + speed * 0.45 + roll * 140;
+}
+
+export function isDownwardDuckGesture(startX, startY, currentX, currentY) {
+  const horizontalDistance = Math.abs(currentX - startX);
+  const downwardDistance = currentY - startY;
+  return downwardDistance >= TOUCH_DUCK_DISTANCE && downwardDistance >= horizontalDistance * 0.75;
+}
+
+export function isTapGesture(startX, startY, currentX, currentY, durationMs) {
+  return (
+    Math.hypot(currentX - startX, currentY - startY) <= TOUCH_TAP_DISTANCE &&
+    durationMs <= TOUCH_TAP_MAX_DURATION
+  );
 }
 
 export function rectanglesIntersect(a, b) {

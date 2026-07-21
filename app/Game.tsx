@@ -11,6 +11,8 @@ import {
 import {
   chooseObstacle,
   formatScore,
+  isDownwardDuckGesture,
+  isTapGesture,
   makeSeededRandom,
   OBSTACLE_SIZES,
   obstacleCollisionBox,
@@ -25,6 +27,7 @@ type ObstacleKind = "trash" | "dumpster" | "pigeon";
 type Rect = { x: number; y: number; w: number; h: number };
 type Obstacle = Rect & { id: number; kind: ObstacleKind; frameOffset: number };
 type GroundMark = { x: number; y: number; kind: number; size: number };
+type TouchGesture = { pointerId: number; startX: number; startY: number; startedAt: number; ducking: boolean };
 
 type Engine = {
   state: GameState;
@@ -278,6 +281,7 @@ export function Game() {
   const [scoreNotice, setScoreNotice] = useState("");
   const codefairRef = useRef(codefair);
   const leaderboardOpenRef = useRef(leaderboardOpen);
+  const touchGestureRef = useRef<TouchGesture | null>(null);
 
   useEffect(() => {
     codefairRef.current = codefair;
@@ -548,11 +552,51 @@ export function Game() {
   }, []);
 
   const onCanvasPointerDown = (event: React.PointerEvent<HTMLCanvasElement>) => {
+    if (event.pointerType === "mouse") {
+      jump();
+      return;
+    }
+    if (!event.isPrimary || touchGestureRef.current) return;
+    event.preventDefault();
     event.currentTarget.setPointerCapture(event.pointerId);
-    const bounds = event.currentTarget.getBoundingClientRect();
-    const lowerHalf = event.clientY - bounds.top > bounds.height * 0.67;
-    if (lowerHalf && gameState === "running") setDuck(true);
-    else jump();
+    touchGestureRef.current = {
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      startY: event.clientY,
+      startedAt: performance.now(),
+      ducking: false,
+    };
+  };
+
+  const onCanvasPointerMove = (event: React.PointerEvent<HTMLCanvasElement>) => {
+    const gesture = touchGestureRef.current;
+    if (!gesture || gesture.pointerId !== event.pointerId || gesture.ducking) return;
+    if (isDownwardDuckGesture(gesture.startX, gesture.startY, event.clientX, event.clientY)) {
+      gesture.ducking = true;
+      setDuck(true);
+    }
+  };
+
+  const finishTouchGesture = (event: React.PointerEvent<HTMLCanvasElement>, cancelled = false) => {
+    const gesture = touchGestureRef.current;
+    if (!gesture || gesture.pointerId !== event.pointerId) return;
+    if (gesture.ducking) setDuck(false);
+    else if (
+      !cancelled &&
+      isTapGesture(
+        gesture.startX,
+        gesture.startY,
+        event.clientX,
+        event.clientY,
+        performance.now() - gesture.startedAt,
+      )
+    ) {
+      jump();
+    }
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
+    touchGestureRef.current = null;
   };
 
   return (
@@ -576,9 +620,11 @@ export function Game() {
           width={WIDTH}
           height={HEIGHT}
           onPointerDown={onCanvasPointerDown}
-          onPointerUp={() => setDuck(false)}
-          onPointerCancel={() => setDuck(false)}
-          aria-label="Jimothy runs through an alley. Press Space or Arrow Up to jump and Arrow Down to duck."
+          onPointerMove={onCanvasPointerMove}
+          onPointerUp={(event) => finishTouchGesture(event)}
+          onPointerCancel={(event) => finishTouchGesture(event, true)}
+          onLostPointerCapture={(event) => finishTouchGesture(event, true)}
+          aria-label="Jimothy runs through an alley. Press Space or Arrow Up, click, or tap to jump. Swipe down and hold to duck."
           role="img"
         />
         {gameState === "dead" && scoreNotice && (
@@ -592,7 +638,10 @@ export function Game() {
       </section>
 
       <footer className="game-footer">
-        <div className="control-hint"><kbd>SPACE</kbd><kbd>↑</kbd><span>JUMP</span></div>
+        <div className="control-hint">
+          <kbd className="desktop-control-label">SPACE</kbd><kbd className="desktop-control-label">↑</kbd>
+          <span className="desktop-control-label">JUMP</span><span className="mobile-control-label">TAP TO JUMP</span>
+        </div>
         <div className="status-line" aria-live="polite">
           <span>{gameState === "waiting" ? "READY" : gameState === "running" ? "RUNNING" : "RUN ENDED"}</span>
           <span className="status-dot" aria-hidden="true">•</span>
@@ -600,7 +649,10 @@ export function Game() {
           <span className="status-dot" aria-hidden="true">•</span>
           <span>HI {formatScore(visibleHighScore)}</span>
         </div>
-        <div className="control-hint"><kbd>↓</kbd><span>DUCK</span></div>
+        <div className="control-hint">
+          <kbd className="desktop-control-label">↓</kbd><span className="desktop-control-label">DUCK</span>
+          <span className="mobile-control-label">SWIPE ↓ + HOLD</span>
+        </div>
       </footer>
 
       {leaderboardOpen && (
