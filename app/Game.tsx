@@ -12,6 +12,9 @@ import {
   chooseObstacle,
   formatScore,
   makeSeededRandom,
+  obstacleCollisionBox,
+  playerCollisionBox,
+  rectanglesIntersect,
   spacingForSpeed,
   speedForScore,
 } from "./game/rules.mjs";
@@ -51,35 +54,36 @@ const PLAYER_X = 128;
 const PLAYER_W = 58;
 const PLAYER_H = 43;
 const DUCK_H = 27;
+const PLAYER_SPRITE_SCALE = 0.66;
 
 const idleFrames: Sprite[] = [
-  { x: 33, y: 55, w: 96, h: 64 },
-  { x: 143, y: 55, w: 100, h: 64 },
-  { x: 255, y: 55, w: 101, h: 64 },
-  { x: 367, y: 55, w: 101, h: 64 },
+  { x: 37, y: 63, w: 88, h: 43 },
+  { x: 153, y: 62, w: 87, h: 44 },
+  { x: 266, y: 61, w: 87, h: 45 },
+  { x: 379, y: 61, w: 87, h: 45 },
 ];
 
 const runFrames: Sprite[] = [
-  { x: 32, y: 174, w: 101, h: 64 },
-  { x: 144, y: 174, w: 101, h: 64 },
-  { x: 255, y: 174, w: 102, h: 64 },
-  { x: 367, y: 174, w: 101, h: 64 },
-  { x: 477, y: 174, w: 101, h: 64 },
-  { x: 585, y: 174, w: 103, h: 64 },
+  { x: 40, y: 180, w: 85, h: 44 },
+  { x: 151, y: 180, w: 85, h: 45 },
+  { x: 251, y: 179, w: 75, h: 49 },
+  { x: 337, y: 180, w: 74, h: 48 },
+  { x: 422, y: 179, w: 70, h: 46 },
+  { x: 507, y: 178, w: 73, h: 49 },
 ];
 
 const jumpFrames: Sprite[] = [
-  { x: 32, y: 290, w: 100, h: 66 },
-  { x: 143, y: 288, w: 104, h: 68 },
-  { x: 255, y: 290, w: 101, h: 66 },
+  { x: 42, y: 302, w: 84, h: 45 },
+  { x: 153, y: 288, w: 87, h: 52 },
+  { x: 263, y: 300, w: 83, h: 46 },
 ];
 
-const trashSprite: Sprite = { x: 625, y: 172, w: 91, h: 75 };
-const dumpsterSprite: Sprite = { x: 777, y: 94, w: 169, h: 154 };
+const trashSprite: Sprite = { x: 645, y: 180, w: 41, h: 52 };
+const dumpsterSprite: Sprite = { x: 788, y: 103, w: 135, h: 134 };
 const pigeonFrames: Sprite[] = [
-  { x: 975, y: 132, w: 75, h: 69 },
-  { x: 1066, y: 132, w: 80, h: 69 },
-  { x: 1156, y: 132, w: 78, h: 69 },
+  { x: 984, y: 142, w: 64, h: 45 },
+  { x: 1070, y: 143, w: 65, h: 45 },
+  { x: 1158, y: 143, w: 65, h: 45 },
 ];
 
 const initialCodefairState: CodefairState = { user: null, entries: [] };
@@ -127,27 +131,20 @@ function roundedRect(context: CanvasRenderingContext2D, x: number, y: number, w:
   context.roundRect(x, y, w, h, r);
 }
 
-function intersect(a: Rect, b: Rect) {
-  return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
-}
-
 function playerHitbox(engine: Engine): Rect {
-  const duckHeight = engine.ducking && engine.playerY >= GROUND_Y - PLAYER_H - 0.5 ? DUCK_H : PLAYER_H;
-  const visibleY = GROUND_Y - duckHeight;
-  return {
-    x: PLAYER_X + PLAYER_W * 0.15,
-    y: visibleY + duckHeight * 0.18,
-    w: PLAYER_W * 0.7,
-    h: duckHeight * 0.75,
-  };
+  return playerCollisionBox({
+    x: PLAYER_X,
+    y: engine.playerY,
+    width: PLAYER_W,
+    height: PLAYER_H,
+    ducking: engine.ducking,
+    groundY: GROUND_Y,
+    duckHeight: DUCK_H,
+  });
 }
 
 function obstacleHitbox(obstacle: Obstacle): Rect {
-  if (obstacle.kind === "pigeon") {
-    return { x: obstacle.x + 7, y: obstacle.y + 6, w: obstacle.w - 14, h: obstacle.h - 12 };
-  }
-  const inset = obstacle.kind === "dumpster" ? 5 : 3;
-  return { x: obstacle.x + inset, y: obstacle.y + inset, w: obstacle.w - inset * 2, h: obstacle.h - inset };
+  return obstacleCollisionBox(obstacle);
 }
 
 function drawSprite(
@@ -158,6 +155,17 @@ function drawSprite(
 ) {
   if (!atlas) return;
   context.drawImage(atlas, sprite.x, sprite.y, sprite.w, sprite.h, destination.x, destination.y, destination.w, destination.h);
+}
+
+function fittedPlayerDestination(sprite: Sprite, top: number): Rect {
+  const width = Math.round(sprite.w * PLAYER_SPRITE_SCALE);
+  const height = Math.round(sprite.h * PLAYER_SPRITE_SCALE);
+  return {
+    x: Math.round(PLAYER_X + (PLAYER_W - width) / 2),
+    y: Math.round(top + PLAYER_H - height),
+    w: width,
+    h: height,
+  };
 }
 
 function spawnAhead(engine: Engine) {
@@ -174,10 +182,10 @@ function spawnAhead(engine: Engine) {
       engine.obstacles.push({
         id: engine.nextObstacleId++,
         kind,
-        x: startX + index * 35,
-        y: GROUND_Y - 31,
-        w: 24,
-        h: 31,
+        x: startX + index * 44,
+        y: GROUND_Y - 38,
+        w: 30,
+        h: 38,
         frameOffset: 0,
       });
     }
@@ -189,9 +197,9 @@ function spawnAhead(engine: Engine) {
       id: engine.nextObstacleId++,
       kind,
       x: startX,
-      y: GROUND_Y - 58,
-      w: 67,
-      h: 58,
+      y: GROUND_Y - 75,
+      w: 76,
+      h: 75,
       frameOffset: 0,
     });
     return;
@@ -203,9 +211,9 @@ function spawnAhead(engine: Engine) {
     id: engine.nextObstacleId++,
     kind,
     x: startX,
-    y: GROUND_Y - height - 14,
-    w: 44,
-    h: 28,
+    y: GROUND_Y - height - 16,
+    w: 48,
+    h: 33,
     frameOffset: engine.random() * 0.2,
   });
 }
@@ -418,7 +426,7 @@ export function Game() {
         spawnAhead(engine);
 
         const playerBox = playerHitbox(engine);
-        const collision = engine.obstacles.some((obstacle) => intersect(playerBox, obstacleHitbox(obstacle)));
+        const collision = engine.obstacles.some((obstacle) => rectanglesIntersect(playerBox, obstacleHitbox(obstacle)));
         if (collision) {
           engine.state = "dead";
           engine.frozenFrame = Math.floor(engine.animationTime * 12) % runFrames.length;
@@ -496,18 +504,18 @@ export function Game() {
       let playerSprite: Sprite;
       let destination: Rect;
       if (engine.state === "waiting") {
-        playerSprite = idleFrames[Math.floor(engine.animationTime * 6) % idleFrames.length];
-        destination = { x: PLAYER_X, y: engine.playerY, w: PLAYER_W, h: PLAYER_H };
+        playerSprite = idleFrames[Math.floor(engine.animationTime * 6) % idleFrames.length] ?? idleFrames[0];
+        destination = fittedPlayerDestination(playerSprite, engine.playerY);
       } else if (!onGround) {
         const frame = engine.playerVelocity < -50 ? 0 : engine.playerVelocity > 100 ? 2 : 1;
-        playerSprite = jumpFrames[frame];
-        destination = { x: PLAYER_X, y: engine.playerY, w: PLAYER_W, h: PLAYER_H };
+        playerSprite = jumpFrames[frame] ?? jumpFrames[1];
+        destination = fittedPlayerDestination(playerSprite, engine.playerY);
       } else {
         const frame = engine.state === "dead" ? engine.frozenFrame : Math.floor(engine.animationTime * 12) % runFrames.length;
-        playerSprite = runFrames[frame];
+        playerSprite = runFrames[frame] ?? runFrames[0];
         destination = engine.ducking
-          ? { x: PLAYER_X - 2, y: GROUND_Y - DUCK_H, w: PLAYER_W + 5, h: DUCK_H }
-          : { x: PLAYER_X, y: GROUND_Y - PLAYER_H, w: PLAYER_W, h: PLAYER_H };
+          ? { x: PLAYER_X - 3, y: GROUND_Y - DUCK_H, w: PLAYER_W + 6, h: DUCK_H }
+          : fittedPlayerDestination(playerSprite, GROUND_Y - PLAYER_H);
       }
       drawSprite(context, atlasRef.current, playerSprite, destination);
 

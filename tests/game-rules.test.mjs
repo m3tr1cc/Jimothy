@@ -4,6 +4,9 @@ import {
   chooseObstacle,
   formatScore,
   makeSeededRandom,
+  obstacleCollisionBox,
+  playerCollisionBox,
+  rectanglesIntersect,
   spacingForSpeed,
   speedForScore,
 } from "../app/game/rules.mjs";
@@ -34,4 +37,35 @@ test("seeded runs and spacing are reproducible and fair", () => {
   assert.deepEqual([first(), first(), first()], [second(), second(), second()]);
   assert.ok(spacingForSpeed(360, 0) >= 340);
   assert.ok(spacingForSpeed(780, 1) >= 670);
+});
+
+test("a jumping player carries its collision box above a ground obstacle", () => {
+  const player = playerCollisionBox({
+    x: 128,
+    y: 65,
+    width: 58,
+    height: 43,
+    ducking: false,
+    groundY: 157,
+    duckHeight: 27,
+  });
+  const trash = obstacleCollisionBox({ kind: "trash", x: 142, y: 119, w: 30, h: 38 });
+
+  assert.ok(player.y + player.h < trash.y);
+  assert.equal(rectanglesIntersect(player, trash), false);
+});
+
+test("the same player collides with the trash can when grounded", () => {
+  const player = playerCollisionBox({
+    x: 128,
+    y: 114,
+    width: 58,
+    height: 43,
+    ducking: false,
+    groundY: 157,
+    duckHeight: 27,
+  });
+  const trash = obstacleCollisionBox({ kind: "trash", x: 142, y: 119, w: 30, h: 38 });
+
+  assert.equal(rectanglesIntersect(player, trash), true);
 });
