@@ -1,41 +1,49 @@
-# Design QA: consistent score typography
+# Design QA: new Jimothy player sprites
 
 ## Visual truth
 
-- Source first-run screenshot: `C:/Users/jleon/Documents/Codex/2026-07-20/local-files-create-a-new-project/.codex-remote-attachments/019f81dd-4fd3-76d2-8dc1-8433a2879074/36f253d1-640f-43dd-a0f4-68c1a9f9985e/1-Photo-1.jpg`
-- Source GAME OVER screenshot: `C:/Users/jleon/Documents/Codex/2026-07-20/local-files-create-a-new-project/.codex-remote-attachments/019f81dd-4fd3-76d2-8dc1-8433a2879074/36f253d1-640f-43dd-a0f4-68c1a9f9985e/2-Photo-2.jpg`
-- Implementation screenshots: `C:/Users/jleon/AppData/Local/Temp/jimothy-score-waiting.png`, `C:/Users/jleon/AppData/Local/Temp/jimothy-score-dead.png`, and `C:/Users/jleon/AppData/Local/Temp/jimothy-score-restarted.png`
-- Combined source/implementation comparison: `C:/Users/jleon/AppData/Local/Temp/jimothy-score-comparison.png`
-- Viewport: 390×844, light color scheme, reduced motion enabled
-- States: initial waiting screen, GAME OVER, and a restarted run
+- Source visual: `C:/Users/jleon/Documents/Codex/2026-07-20/local-files-create-a-new-project/.codex-remote-attachments/019f81dd-4fd3-76d2-8dc1-8433a2879074/c4e8333b-2300-4011-848e-a316745975b7/1-Photo-1.jpg`
+- Implementation screenshots: `C:/Users/jleon/AppData/Local/Temp/jimothy-new-idle-800.png`, `C:/Users/jleon/AppData/Local/Temp/jimothy-new-run-800.png`, `C:/Users/jleon/AppData/Local/Temp/jimothy-new-mobile-dead.png`, and `C:/Users/jleon/AppData/Local/Temp/jimothy-new-mobile-restart.png`
+- Combined source/implementation comparison: `C:/Users/jleon/AppData/Local/Temp/jimothy-new-sprite-comparison.png`
+- Viewports: 800×500 for internal-resolution sprite review and 390×844 for the mobile game flow
+- States: waiting/idle, running, GAME OVER, and restarted run
 
 ## Findings
 
 - No actionable P0, P1, or P2 differences remain.
-- The inconsistent first-run size was caused by an invalid canvas font declaration that contained an unresolved CSS variable. The canvas initially retained its 10px default, then retained the valid 22px restart-glyph font after GAME OVER.
-- Score rendering now uses an explicit canvas-safe 22px font stack on every frame, independent of game state or previously drawn UI.
-- Direct pixel inspection found identical score bounds in all three tested states: x=581–775, y=21–34, 195×14 internal canvas pixels.
-- The score remains right aligned in its original position and the game-only layout is unchanged.
-- The local high score remains visible after restart.
-- No framework overlay, page error, unexpected UI, or browser console error was detected.
+- All four idle, six run, and three jump frames use the exact round-bodied Jimothy artwork supplied in the new reference.
+- Frame crops preserve the upright tail, white eye pixel, compact legs, and the takeoff/airborne/landing silhouettes without adjacent labels or neighboring sprites.
+- The processed frames remain sharp and monochrome after the existing canvas transparency treatment.
+- Jimothy fits the existing 58×43 player bounds while the collision box remains tighter than the visible sprite.
+- Trash, dumpster, and pigeon sprites remain on their previous atlases, which intentionally preserves the already-approved obstacle proportions and collision tuning.
+- The game-only shell, score placement, mobile scaling, and restart flow are unchanged.
+- No framework overlay, browser error, or unexpected console error was detected.
 
-## Fidelity surfaces
+## Required fidelity surfaces
 
-- Fonts and typography: Score and `HI` use the larger requested size consistently; GAME OVER and waiting copy keep their intended independent sizes.
-- Spacing and layout rhythm: Score alignment, canvas dimensions, and the centered game strip remain unchanged.
-- Colors and visual tokens: The paper background and gray game ink remain unchanged.
-- Image quality and asset fidelity: Sprite rendering and nearest-neighbor scaling are unaffected.
-- Copy and content: No game copy changed.
+- Fonts and typography: unchanged; the supplied sprite-sheet labels are not rendered in-game.
+- Spacing and layout rhythm: Jimothy remains anchored at the existing left position and ground line, with consistent bottom alignment across differently sized frames.
+- Colors and visual tokens: the new source pixels use the established `#4e4e4c` game ink on the existing paper background.
+- Image quality and asset fidelity: the supplied raster is used directly as a dedicated player atlas; nearest-neighbor canvas scaling remains enabled and no replacement drawing or generated approximation was introduced.
+- Copy and content: unchanged.
 
 ## Comparison evidence
 
-- The combined comparison places both user screenshots beside the corrected initial, GAME OVER, and restart states.
-- Enlarged score crops show the original size mismatch at left and the corrected consistent size across all implementation states at right.
-- Programmatic canvas-pixel measurement independently confirms the three corrected score renderings have identical bounds.
+- The focused comparison places the source Jimothy frame region beside all 13 processed implementation frames at a readable size.
+- The same comparison includes full live-canvas waiting and running states, confirming ground alignment and in-game scale.
+- Separate mobile captures confirm the new player remains legible at 390×844 and survives the GAME OVER-to-restart loop without layout drift.
+
+## Primary interactions tested
+
+- Pointer start from anywhere in the game shell.
+- Keyboard jump and duck handlers.
+- Collision freeze and GAME OVER state.
+- Pointer restart into a fresh run.
+- Reduced-motion preference at the 390×844 viewport.
 
 ## Comparison history
 
-1. The first corrected implementation comparison showed the larger score in all three game states with identical measured glyph bounds, so no additional P0/P1/P2 correction loop was required.
+1. The first source-versus-implementation comparison showed every supplied player frame isolated cleanly and the live game scale aligned with the reference, so no P0/P1/P2 correction loop was required.
 
 ## Final result
 

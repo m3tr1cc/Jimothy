@@ -58,25 +58,25 @@ const PROMPT_FONT = `14px ${CANVAS_MONO_FONT}`;
 const GAME_OVER_FONT = `22px ${CANVAS_MONO_FONT}`;
 
 const idleFrames: Sprite[] = [
-  { x: 37, y: 63, w: 88, h: 43 },
-  { x: 153, y: 62, w: 87, h: 44 },
-  { x: 266, y: 61, w: 87, h: 45 },
-  { x: 379, y: 61, w: 87, h: 45 },
+  { x: 31, y: 130, w: 83, h: 62 },
+  { x: 136, y: 130, w: 83, h: 62 },
+  { x: 239, y: 130, w: 84, h: 62 },
+  { x: 344, y: 130, w: 83, h: 63 },
 ];
 
 const runFrames: Sprite[] = [
-  { x: 40, y: 180, w: 85, h: 44 },
-  { x: 151, y: 180, w: 85, h: 45 },
-  { x: 251, y: 179, w: 75, h: 49 },
-  { x: 337, y: 180, w: 74, h: 48 },
-  { x: 422, y: 179, w: 70, h: 46 },
-  { x: 507, y: 178, w: 73, h: 49 },
+  { x: 30, y: 281, w: 82, h: 65 },
+  { x: 127, y: 281, w: 83, h: 65 },
+  { x: 220, y: 281, w: 84, h: 65 },
+  { x: 314, y: 281, w: 84, h: 66 },
+  { x: 408, y: 281, w: 84, h: 65 },
+  { x: 499, y: 281, w: 83, h: 63 },
 ];
 
 const jumpFrames: Sprite[] = [
-  { x: 42, y: 302, w: 84, h: 45 },
-  { x: 153, y: 288, w: 87, h: 52 },
-  { x: 263, y: 300, w: 83, h: 46 },
+  { x: 31, y: 446, w: 83, h: 61 },
+  { x: 143, y: 420, w: 84, h: 69 },
+  { x: 252, y: 444, w: 84, h: 63 },
 ];
 
 const trashSprite: Sprite = { x: 645, y: 180, w: 41, h: 52 };
@@ -267,7 +267,8 @@ function makeAudio() {
 export function Game() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const engineRef = useRef<Engine | null>(null);
-  const atlasRef = useRef<HTMLCanvasElement | null>(null);
+  const playerAtlasRef = useRef<HTMLCanvasElement | null>(null);
+  const obstacleAtlasRef = useRef<HTMLCanvasElement | null>(null);
   const pigeonAtlasRef = useRef<HTMLCanvasElement | null>(null);
   const audioRef = useRef<ReturnType<typeof makeAudio> | null>(null);
   const touchGestureRef = useRef<TouchGesture | null>(null);
@@ -313,10 +314,16 @@ export function Game() {
     engineRef.current = makeEngine(highScore);
     audioRef.current = makeAudio();
 
-    const image = new Image();
-    image.src = "/jimothy-sprites.jpg";
-    image.onload = () => {
-      atlasRef.current = createAtlas(image, [78, 78, 76]);
+    const playerImage = new Image();
+    playerImage.src = "/jimothy-player-sprites.jpg";
+    playerImage.onload = () => {
+      playerAtlasRef.current = createAtlas(playerImage, [78, 78, 76]);
+    };
+
+    const obstacleImage = new Image();
+    obstacleImage.src = "/jimothy-sprites.jpg";
+    obstacleImage.onload = () => {
+      obstacleAtlasRef.current = createAtlas(obstacleImage, [78, 78, 76]);
     };
 
     const pigeonImage = new Image();
@@ -440,8 +447,8 @@ export function Game() {
       }
 
       for (const obstacle of engine.obstacles) {
-        if (obstacle.kind === "trash") drawSprite(context, atlasRef.current, trashSprite, obstacle);
-        if (obstacle.kind === "dumpster") drawSprite(context, atlasRef.current, dumpsterSprite, obstacle);
+        if (obstacle.kind === "trash") drawSprite(context, obstacleAtlasRef.current, trashSprite, obstacle);
+        if (obstacle.kind === "dumpster") drawSprite(context, obstacleAtlasRef.current, dumpsterSprite, obstacle);
         if (obstacle.kind === "pigeon") {
           const frame = pigeonFrameForTime(engine.animationTime, obstacle.frameOffset);
           const sprite = pigeonFrames[frame];
@@ -466,7 +473,7 @@ export function Game() {
           ? { x: PLAYER_X - 3, y: GROUND_Y - DUCK_H, w: PLAYER_W + 6, h: DUCK_H }
           : fittedPlayerDestination(playerSprite, GROUND_Y - PLAYER_H);
       }
-      drawSprite(context, atlasRef.current, playerSprite, destination);
+      drawSprite(context, playerAtlasRef.current, playerSprite, destination);
 
       if (engine.state === "waiting") {
         context.fillStyle = "#4e4e4c";

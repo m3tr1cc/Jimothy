@@ -26,6 +26,7 @@ This is a real playable game. Never ship fake controls, decorative buttons that 
 - Space, Arrow Up, click, and a tap anywhere in the game shell jump. Arrow Down ducks; on touch, swipe down anywhere and hold to duck until release. Space restarts after a collision.
 - Canvas uses an 800×200 internal resolution, nearest-neighbor scaling, time-based animation, and delta-time physics.
 - Player collision boxes remain tighter than the sprite; pigeons ignore wing tips.
+- Jimothy uses the dedicated supplied player atlas and its round-bodied idle, run, and jump frames. Keep obstacle art on its separate atlas so player-art updates cannot shift obstacle crops.
 - Trash cans remain the most common obstacle, dumpsters unlock at 400, and animated pigeons are mixed into runs from the start at duck-required heights. Pigeons use the dedicated supplied atlas and flap through its raised-, mid-, and down-wing poses without artificial vertical bobbing.
 - Speed begins at 6 px/frame, increases by 0.25 every 100 points, and caps at 13 px/frame.
 - `jimothy_highscore` remains the device-local high-score key.
