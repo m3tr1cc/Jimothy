@@ -30,7 +30,7 @@ This is a real playable game. Never ship fake controls, decorative buttons that 
 - Speed begins at 6 px/frame, increases by 0.25 every 100 points, and caps at 13 px/frame.
 - `jimothy_highscore` remains the device-local high-score key.
 - The game is the entire interface: no header, footer, leaderboard, authentication, login prompt, score-submission flow, or surrounding controls.
-- Score and `HI` remain visible inside the canvas. After a collision, Space, click, or tap starts a fresh run.
+- Score and `HI` remain visible inside the canvas at a consistent 22px internal size using an explicit canvas-safe font stack. After a collision, Space, click, or tap starts a fresh run.
 - Audio stays minimal, synthesized, user-initiated, and silent by default until interaction. No background music.
 
 ## Supabase migrations

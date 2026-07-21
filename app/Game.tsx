@@ -52,6 +52,10 @@ const PLAYER_W = 58;
 const PLAYER_H = 43;
 const DUCK_H = 27;
 const PLAYER_SPRITE_SCALE = 0.66;
+const CANVAS_MONO_FONT = '"Geist Mono", "Courier New", monospace';
+const SCORE_FONT = `22px ${CANVAS_MONO_FONT}`;
+const PROMPT_FONT = `14px ${CANVAS_MONO_FONT}`;
+const GAME_OVER_FONT = `22px ${CANVAS_MONO_FONT}`;
 
 const idleFrames: Sprite[] = [
   { x: 37, y: 63, w: 88, h: 43 },
@@ -404,7 +408,7 @@ export function Game() {
       context.fillRect(0, 0, WIDTH, HEIGHT);
 
       context.fillStyle = "#4e4e4c";
-      context.font = "16px var(--font-geist-mono), monospace";
+      context.font = SCORE_FONT;
       context.textAlign = "right";
       context.textBaseline = "top";
       const scoreText = `${engine.highScore > 0 ? `HI ${formatScore(engine.highScore)}  ` : ""}${formatScore(engine.score)}`;
@@ -468,7 +472,7 @@ export function Game() {
         context.fillStyle = "#4e4e4c";
         context.textAlign = "center";
         context.textBaseline = "middle";
-        context.font = "14px var(--font-geist-mono), monospace";
+        context.font = PROMPT_FONT;
         context.fillText("SPACE OR TAP ANYWHERE TO RUN", WIDTH / 2, 78);
       }
 
@@ -476,7 +480,7 @@ export function Game() {
         context.fillStyle = "#4e4e4c";
         context.textAlign = "center";
         context.textBaseline = "middle";
-        context.font = "22px var(--font-geist-mono), monospace";
+        context.font = GAME_OVER_FONT;
         context.fillText("G A M E  O V E R", WIDTH / 2, 77);
         roundedRect(context, WIDTH / 2 - 19, 98, 38, 30, 3);
         context.stroke();
