@@ -4,8 +4,8 @@ Jimothy is a Codefair-ready, full-frame recreation of the Chrome Dino runner fee
 
 ## Controls
 
-- Jump: Space, Arrow Up, click, or tap
-- Duck: hold Arrow Down, or swipe down and keep holding on touch
+- Jump: Space, Arrow Up, click, or tap anywhere in the game
+- Duck: hold Arrow Down, or swipe down anywhere and keep holding on touch
 - Restart: Space, click, or tap after a collision
 - Leaderboard: Global Top 10 button or `L`
 

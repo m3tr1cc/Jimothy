@@ -51,6 +51,14 @@ button {
     linear-gradient(90deg, transparent 0 49.9%, rgb(78 78 76 / 3%) 50%, transparent 50.1%) 0 0 / 200px 100%,
     var(--paper);
   isolation: isolate;
+  cursor: pointer;
+  touch-action: none;
+  user-select: none;
+}
+
+.game-shell.leaderboard-open {
+  cursor: default;
+  touch-action: pan-y;
 }
 
 .game-shell::before {
@@ -141,8 +149,6 @@ button {
   image-rendering: pixelated;
   image-rendering: crisp-edges;
   outline: none;
-  touch-action: none;
-  user-select: none;
 }
 
 .score-notice {

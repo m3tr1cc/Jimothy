@@ -16,6 +16,8 @@ import {
   makeSeededRandom,
   OBSTACLE_SIZES,
   obstacleCollisionBox,
+  PIGEON_FLIGHT_GAPS,
+  pigeonFrameForTime,
   playerCollisionBox,
   rectanglesIntersect,
   spacingForSpeed,
@@ -151,6 +153,10 @@ function obstacleHitbox(obstacle: Obstacle): Rect {
   return obstacleCollisionBox(obstacle);
 }
 
+function isInteractivePointerTarget(target: EventTarget | null) {
+  return target instanceof Element && Boolean(target.closest("button, a, input, select, textarea, [role='dialog']"));
+}
+
 function drawSprite(
   context: CanvasRenderingContext2D,
   atlas: HTMLCanvasElement | null,
@@ -209,14 +215,13 @@ function spawnAhead(engine: Engine) {
     return;
   }
 
-  const heights = [35, 58, 82];
-  const height = heights[Math.floor(engine.random() * heights.length)];
   const size = OBSTACLE_SIZES.pigeon;
+  const groundGap = PIGEON_FLIGHT_GAPS[Math.floor(engine.random() * PIGEON_FLIGHT_GAPS.length)];
   engine.obstacles.push({
     id: engine.nextObstacleId++,
     kind,
     x: startX,
-    y: GROUND_Y - height - 16,
+    y: GROUND_Y - groundGap - size.h,
     ...size,
     frameOffset: engine.random() * 0.2,
   });
@@ -500,8 +505,9 @@ export function Game() {
         if (obstacle.kind === "trash") drawSprite(context, atlasRef.current, trashSprite, obstacle);
         if (obstacle.kind === "dumpster") drawSprite(context, atlasRef.current, dumpsterSprite, obstacle);
         if (obstacle.kind === "pigeon") {
-          const frame = Math.floor((engine.animationTime + obstacle.frameOffset) * 12) % pigeonFrames.length;
-          drawSprite(context, atlasRef.current, pigeonFrames[frame], obstacle);
+          const frame = pigeonFrameForTime(engine.animationTime, obstacle.frameOffset);
+          const flyingDestination = { ...obstacle, y: obstacle.y + frame - 1 };
+          drawSprite(context, atlasRef.current, pigeonFrames[frame], flyingDestination);
         }
       }
 
@@ -529,7 +535,7 @@ export function Game() {
         context.textAlign = "center";
         context.textBaseline = "middle";
         context.font = "14px var(--font-geist-mono), monospace";
-        context.fillText("SPACE OR TAP TO RUN", WIDTH / 2, 78);
+        context.fillText("SPACE OR TAP ANYWHERE TO RUN", WIDTH / 2, 78);
       }
 
       if (engine.state === "dead") {
@@ -551,8 +557,10 @@ export function Game() {
     return () => cancelAnimationFrame(animationFrame);
   }, []);
 
-  const onCanvasPointerDown = (event: React.PointerEvent<HTMLCanvasElement>) => {
+  const onGamePointerDown = (event: React.PointerEvent<HTMLElement>) => {
+    if (leaderboardOpenRef.current || isInteractivePointerTarget(event.target)) return;
     if (event.pointerType === "mouse") {
+      if (event.button !== 0) return;
       jump();
       return;
     }
@@ -568,7 +576,7 @@ export function Game() {
     };
   };
 
-  const onCanvasPointerMove = (event: React.PointerEvent<HTMLCanvasElement>) => {
+  const onGamePointerMove = (event: React.PointerEvent<HTMLElement>) => {
     const gesture = touchGestureRef.current;
     if (!gesture || gesture.pointerId !== event.pointerId || gesture.ducking) return;
     if (isDownwardDuckGesture(gesture.startX, gesture.startY, event.clientX, event.clientY)) {
@@ -577,7 +585,7 @@ export function Game() {
     }
   };
 
-  const finishTouchGesture = (event: React.PointerEvent<HTMLCanvasElement>, cancelled = false) => {
+  const finishTouchGesture = (event: React.PointerEvent<HTMLElement>, cancelled = false) => {
     const gesture = touchGestureRef.current;
     if (!gesture || gesture.pointerId !== event.pointerId) return;
     if (gesture.ducking) setDuck(false);
@@ -600,7 +608,14 @@ export function Game() {
   };
 
   return (
-    <main className="game-shell">
+    <main
+      className={`game-shell${leaderboardOpen ? " leaderboard-open" : ""}`}
+      onPointerDown={onGamePointerDown}
+      onPointerMove={onGamePointerMove}
+      onPointerUp={(event) => finishTouchGesture(event)}
+      onPointerCancel={(event) => finishTouchGesture(event, true)}
+      onLostPointerCapture={(event) => finishTouchGesture(event, true)}
+    >
       <header className="game-header">
         <div className="wordmark" aria-label="Jimothy alley run">
           <span className="wordmark-mark" aria-hidden="true">J</span>
@@ -619,12 +634,7 @@ export function Game() {
           className="game-canvas"
           width={WIDTH}
           height={HEIGHT}
-          onPointerDown={onCanvasPointerDown}
-          onPointerMove={onCanvasPointerMove}
-          onPointerUp={(event) => finishTouchGesture(event)}
-          onPointerCancel={(event) => finishTouchGesture(event, true)}
-          onLostPointerCapture={(event) => finishTouchGesture(event, true)}
-          aria-label="Jimothy runs through an alley. Press Space or Arrow Up, click, or tap to jump. Swipe down and hold to duck."
+          aria-label="Jimothy runs through an alley. Press Space or Arrow Up, click, or tap anywhere in the game to jump. Swipe down anywhere and hold to duck."
           role="img"
         />
         {gameState === "dead" && scoreNotice && (
@@ -640,7 +650,7 @@ export function Game() {
       <footer className="game-footer">
         <div className="control-hint">
           <kbd className="desktop-control-label">SPACE</kbd><kbd className="desktop-control-label">↑</kbd>
-          <span className="desktop-control-label">JUMP</span><span className="mobile-control-label">TAP TO JUMP</span>
+          <span className="desktop-control-label">JUMP</span><span className="mobile-control-label">TAP ANYWHERE</span>
         </div>
         <div className="status-line" aria-live="polite">
           <span>{gameState === "waiting" ? "READY" : gameState === "running" ? "RUNNING" : "RUN ENDED"}</span>

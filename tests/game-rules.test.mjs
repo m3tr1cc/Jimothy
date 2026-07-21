@@ -8,6 +8,8 @@ import {
   makeSeededRandom,
   OBSTACLE_SIZES,
   obstacleCollisionBox,
+  PIGEON_FLIGHT_GAPS,
+  pigeonFrameForTime,
   playerCollisionBox,
   rectanglesIntersect,
   spacingForSpeed,
@@ -33,6 +35,45 @@ test("pigeons add variety from the start while dumpsters unlock at 400", () => {
   assert.equal(chooseObstacle(0, 0.81), "pigeon");
   assert.equal(chooseObstacle(400, 0.7), "dumpster");
   assert.equal(chooseObstacle(700, 0.9), "pigeon");
+});
+
+test("pigeons visibly flap through each wing pose", () => {
+  assert.deepEqual(
+    [0, 0.1, 0.2, 0.3, 0.4].map((time) => pigeonFrameForTime(time)),
+    [0, 1, 2, 1, 0],
+  );
+});
+
+test("every pigeon height requires standing Jimothy to duck", () => {
+  const standing = playerCollisionBox({
+    x: 128,
+    y: 114,
+    width: 58,
+    height: 43,
+    ducking: false,
+    groundY: 157,
+    duckHeight: 27,
+  });
+  const ducking = playerCollisionBox({
+    x: 128,
+    y: 114,
+    width: 58,
+    height: 43,
+    ducking: true,
+    groundY: 157,
+    duckHeight: 27,
+  });
+
+  for (const groundGap of PIGEON_FLIGHT_GAPS) {
+    const pigeon = obstacleCollisionBox({
+      kind: "pigeon",
+      x: 128,
+      y: 157 - groundGap - OBSTACLE_SIZES.pigeon.h,
+      ...OBSTACLE_SIZES.pigeon,
+    });
+    assert.equal(rectanglesIntersect(standing, pigeon), true);
+    assert.equal(rectanglesIntersect(ducking, pigeon), false);
+  }
 });
 
 test("seeded runs and spacing are reproducible and fair", () => {

@@ -3,6 +3,8 @@ export const MAX_SPEED = 780;
 export const TOUCH_DUCK_DISTANCE = 18;
 export const TOUCH_TAP_DISTANCE = 12;
 export const TOUCH_TAP_MAX_DURATION = 350;
+export const PIGEON_FLAP_FPS = 10;
+export const PIGEON_FLIGHT_GAPS = Object.freeze([18, 21, 24]);
 export const OBSTACLE_SIZES = Object.freeze({
   trash: { w: 30, h: 38 },
   dumpster: { w: 68, h: 46 },
@@ -47,6 +49,14 @@ export function isTapGesture(startX, startY, currentX, currentY, durationMs) {
     Math.hypot(currentX - startX, currentY - startY) <= TOUCH_TAP_DISTANCE &&
     durationMs <= TOUCH_TAP_MAX_DURATION
   );
+}
+
+const PIGEON_FRAME_SEQUENCE = Object.freeze([0, 1, 2, 1]);
+
+export function pigeonFrameForTime(animationTime, phaseOffset = 0) {
+  const step = Math.floor((animationTime + phaseOffset) * PIGEON_FLAP_FPS);
+  const sequenceIndex = ((step % PIGEON_FRAME_SEQUENCE.length) + PIGEON_FRAME_SEQUENCE.length) % PIGEON_FRAME_SEQUENCE.length;
+  return PIGEON_FRAME_SEQUENCE[sequenceIndex];
 }
 
 export function rectanglesIntersect(a, b) {
