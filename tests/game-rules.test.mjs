@@ -4,6 +4,7 @@ import {
   chooseObstacle,
   formatScore,
   makeSeededRandom,
+  OBSTACLE_SIZES,
   obstacleCollisionBox,
   playerCollisionBox,
   rectanglesIntersect,
@@ -25,9 +26,10 @@ test("speed increases every hundred points and stays capped", () => {
   assert.equal(speedForScore(99999), 780);
 });
 
-test("obstacles unlock at the requested score thresholds", () => {
-  assert.equal(chooseObstacle(399, 0.99), "trash");
-  assert.equal(chooseObstacle(400, 0.75), "dumpster");
+test("pigeons add variety from the start while dumpsters unlock at 400", () => {
+  assert.equal(chooseObstacle(0, 0.79), "trash");
+  assert.equal(chooseObstacle(0, 0.81), "pigeon");
+  assert.equal(chooseObstacle(400, 0.7), "dumpster");
   assert.equal(chooseObstacle(700, 0.9), "pigeon");
 });
 
@@ -68,4 +70,25 @@ test("the same player collides with the trash can when grounded", () => {
   const trash = obstacleCollisionBox({ kind: "trash", x: 142, y: 119, w: 30, h: 38 });
 
   assert.equal(rectanglesIntersect(player, trash), true);
+});
+
+test("Jimothy can physically clear the resized dumpster at jump apex", () => {
+  const player = playerCollisionBox({
+    x: 128,
+    y: 60,
+    width: 58,
+    height: 43,
+    ducking: false,
+    groundY: 157,
+    duckHeight: 27,
+  });
+  const dumpster = obstacleCollisionBox({
+    kind: "dumpster",
+    x: 142,
+    y: 157 - OBSTACLE_SIZES.dumpster.h,
+    ...OBSTACLE_SIZES.dumpster,
+  });
+
+  assert.ok(player.y + player.h < dumpster.y);
+  assert.equal(rectanglesIntersect(player, dumpster), false);
 });

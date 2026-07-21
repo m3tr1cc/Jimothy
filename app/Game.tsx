@@ -12,6 +12,7 @@ import {
   chooseObstacle,
   formatScore,
   makeSeededRandom,
+  OBSTACLE_SIZES,
   obstacleCollisionBox,
   playerCollisionBox,
   rectanglesIntersect,
@@ -176,16 +177,16 @@ function spawnAhead(engine: Engine) {
   const kind = chooseObstacle(engine.score, engine.random()) as ObstacleKind;
 
   if (kind === "trash") {
+    const size = OBSTACLE_SIZES.trash;
     const clusterRoll = engine.random();
     const count = clusterRoll > 0.88 ? 3 : clusterRoll > 0.68 ? 2 : 1;
     for (let index = 0; index < count; index += 1) {
       engine.obstacles.push({
         id: engine.nextObstacleId++,
         kind,
-        x: startX + index * 44,
-        y: GROUND_Y - 38,
-        w: 30,
-        h: 38,
+        x: startX + index * (size.w + 14),
+        y: GROUND_Y - size.h,
+        ...size,
         frameOffset: 0,
       });
     }
@@ -193,13 +194,13 @@ function spawnAhead(engine: Engine) {
   }
 
   if (kind === "dumpster") {
+    const size = OBSTACLE_SIZES.dumpster;
     engine.obstacles.push({
       id: engine.nextObstacleId++,
       kind,
       x: startX,
-      y: GROUND_Y - 75,
-      w: 76,
-      h: 75,
+      y: GROUND_Y - size.h,
+      ...size,
       frameOffset: 0,
     });
     return;
@@ -207,13 +208,13 @@ function spawnAhead(engine: Engine) {
 
   const heights = [35, 58, 82];
   const height = heights[Math.floor(engine.random() * heights.length)];
+  const size = OBSTACLE_SIZES.pigeon;
   engine.obstacles.push({
     id: engine.nextObstacleId++,
     kind,
     x: startX,
     y: GROUND_Y - height - 16,
-    w: 48,
-    h: 33,
+    ...size,
     frameOffset: engine.random() * 0.2,
   });
 }

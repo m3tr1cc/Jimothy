@@ -1,5 +1,10 @@
 export const INITIAL_SPEED = 360;
 export const MAX_SPEED = 780;
+export const OBSTACLE_SIZES = Object.freeze({
+  trash: { w: 30, h: 38 },
+  dumpster: { w: 68, h: 46 },
+  pigeon: { w: 48, h: 33 },
+});
 
 export function formatScore(value) {
   const normalized = Math.max(0, Math.floor(value)) % 100000;
@@ -12,9 +17,9 @@ export function speedForScore(score) {
 }
 
 export function obstacleWeights(score) {
-  if (score < 400) return { trash: 1, dumpster: 0, pigeon: 0 };
-  if (score < 700) return { trash: 0.7, dumpster: 0.3, pigeon: 0 };
-  return { trash: 0.55, dumpster: 0.25, pigeon: 0.2 };
+  if (score < 400) return { trash: 0.8, dumpster: 0, pigeon: 0.2 };
+  if (score < 700) return { trash: 0.58, dumpster: 0.24, pigeon: 0.18 };
+  return { trash: 0.52, dumpster: 0.23, pigeon: 0.25 };
 }
 
 export function chooseObstacle(score, roll) {
